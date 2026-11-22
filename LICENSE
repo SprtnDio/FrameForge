@@ -1,0 +1,42 @@
+MIT License
+
+Copyright (c) 2026 SprtnDio
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-------------------------------------------------------------------------------
+Third-Party Runtime SDK Clarification
+-------------------------------------------------------------------------------
+
+The MIT License above applies exclusively to FrameForge's own original source
+code, shaders, build scripts, installer definitions, documentation, and brand
+assets created by SprtnDio.
+
+Unmodified third-party runtime shared libraries (`.dll` files) that may be
+bundled alongside binary release packages of FrameForge — specifically from:
+
+  1. AMD FidelityFX SDK (Advanced Micro Devices, Inc.)
+  2. Intel XeSS SDK (Intel Corporation)
+  3. NVIDIA Streamline SDK & NVIDIA RTX / DLSS / NGX Plugins (NVIDIA Corporation)
+
+are NOT covered by the MIT License above where proprietary binary terms apply.
+All such third-party libraries remain the sole property of their respective
+copyright holders and are redistributed strictly in accordance with their
+original license agreements located in the `licenses/` directory of binary
+distributions and documented in `THIRD_PARTY_NOTICES.md`.

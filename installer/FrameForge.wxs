@@ -1,0 +1,81 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="FrameForge"
+    Manufacturer="SprtnDio"
+    Version="1.0.0.0"
+    UpgradeCode="8F4E9A21-6C3D-4B87-9E12-5D7A3C10F4B2"
+    Compressed="yes"
+    Scope="perMachine"
+    InstallerVersion="500">
+
+    <SummaryInformation
+      Description="FrameForge v1.0.0 - DirectX 12 Low-Latency Capture &amp; Multi-Vendor Frame Generation"
+      Manufacturer="SprtnDio" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="FrameForgeIcon" SourceFile="target/frameforge.ico" />
+    <Property Id="ARPPRODUCTICON" Value="FrameForgeIcon" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/SprtnDio/FrameForge" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="FrameForge" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppProgramsFolder" Name="FrameForge" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="dist_msi\**" />
+    </ComponentGroup>
+
+    <DirectoryRef Id="AppProgramsFolder">
+      <Component Id="StartMenuShortcutComponent" Guid="A4B8E312-7D19-4C65-8F24-91C3E6A05B71">
+        <Shortcut
+          Id="ApplicationStartMenuShortcut"
+          Name="FrameForge"
+          Description="DirectX 12 Low-Latency Capture &amp; Multi-Vendor Frame Generation"
+          Target="[INSTALLFOLDER]frameforge.exe"
+          WorkingDirectory="INSTALLFOLDER"
+          Icon="FrameForgeIcon" />
+        <RemoveFolder Id="CleanAppProgramsFolder" On="uninstall" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\SprtnDio\FrameForge"
+          Name="StartMenuShortcut"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcutComponent" Guid="C7D29F45-3E81-4A92-B560-28F4B9D17E83">
+        <Shortcut
+          Id="ApplicationDesktopShortcut"
+          Name="FrameForge"
+          Description="DirectX 12 Low-Latency Capture &amp; Multi-Vendor Frame Generation"
+          Target="[INSTALLFOLDER]frameforge.exe"
+          WorkingDirectory="INSTALLFOLDER"
+          Icon="FrameForgeIcon" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\SprtnDio\FrameForge"
+          Name="DesktopShortcut"
+          Type="integer"
+          Value="1"
+          KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="MainApplication" Title="FrameForge" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+      <ComponentRef Id="DesktopShortcutComponent" />
+    </Feature>
+  </Package>
+</Wix>

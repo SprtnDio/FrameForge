@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="FrameForge Cyber-Anvil Logo">
+  <defs>
+    <clipPath id="ff-anvil-clip">
+      <path d="M 12.3 76.3 L 13.3 74.2 Q 44.8 70.1 77.8 68.6 L 78.8 62.5 L 85.0 62.5 L 86.5 52.5 L 243.7 52.5 L 238.1 72.7 L 222.2 78.8 Q 187.4 100.4 166.9 143.4 Q 165.4 171.0 202.2 193.5 L 202.2 212.5 L 160.8 212.5 L 158.7 203.3 Q 135.7 169.5 112.6 203.3 L 110.6 212.5 L 69.1 212.5 L 69.1 193.5 Q 96.3 173.1 94.2 148.5 Q 93.7 134.1 85.0 130.0 L 78.8 130.0 L 77.8 126.5 C 57.6 119.8 32.0 93.4 13.3 78.3 Z" />
+    </clipPath>
+    <linearGradient id="ff-horn-top" x1="0%" y1="0%" x2="95%" y2="85%">
+      <stop offset="0%" stop-color="#E0F2FE" />
+      <stop offset="48%" stop-color="#67E8F9" />
+      <stop offset="100%" stop-color="#22D3EE" />
+    </linearGradient>
+    <linearGradient id="ff-horn-bot" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="52%" stop-color="#1E1B4B" />
+      <stop offset="100%" stop-color="#3B1254" />
+    </linearGradient>
+    <linearGradient id="ff-collar-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155" />
+      <stop offset="100%" stop-color="#131C31" />
+    </linearGradient>
+    <linearGradient id="ff-body-left" x1="20%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#15243F" />
+      <stop offset="100%" stop-color="#09101F" />
+    </linearGradient>
+    <linearGradient id="ff-body-right" x1="20%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#211838" />
+      <stop offset="100%" stop-color="#100B1E" />
+    </linearGradient>
+    <linearGradient id="ff-f1-cyan" x1="15%" y1="0%" x2="75%" y2="100%">
+      <stop offset="0%" stop-color="#A5F3FC" />
+      <stop offset="32%" stop-color="#00E5FF" />
+      <stop offset="72%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="ff-f2-molten" x1="15%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FEF08A" />
+      <stop offset="42%" stop-color="#FF9500" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+    <linearGradient id="ff-magenta-rim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F472B6" />
+      <stop offset="55%" stop-color="#EC4899" />
+      <stop offset="100%" stop-color="#DB2777" />
+    </linearGradient>
+    <radialGradient id="ff-gold-glint" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FEF9C3" stop-opacity="1" />
+      <stop offset="55%" stop-color="#FEF08A" stop-opacity="0.72" />
+      <stop offset="100%" stop-color="#FF9500" stop-opacity="0" />
+    </radialGradient>
+    <filter id="ff-glyph-shadow" x="-15%" y="-15%" width="135%" height="135%">
+      <feDropShadow dx="2" dy="2.8" stdDeviation="1.8" flood-color="#04070F" flood-opacity="0.75" />
+    </filter>
+  </defs>
+
+  <style>
+    .ff-body-l { fill: url(#ff-body-left); }
+    .ff-body-r { fill: url(#ff-body-right); }
+    .ff-horn-u { fill: url(#ff-horn-top); }
+    .ff-horn-b { fill: url(#ff-horn-bot); }
+    .ff-collar { fill: url(#ff-collar-grad); stroke: #050811; stroke-width: 1.8; }
+    .ff-rim-cyan { fill: none; stroke: #22D3EE; stroke-width: 3.0; stroke-linecap: round; stroke-linejoin: round; }
+    .ff-rim-magenta { fill: none; stroke: url(#ff-magenta-rim); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
+    .ff-face-cyan { fill: none; stroke: #E0F2FE; stroke-width: 3.0; stroke-linecap: butt; }
+    .ff-face-gold { fill: none; stroke: #FEF08A; stroke-width: 3.0; stroke-linecap: butt; }
+    .ff-groove { fill: none; stroke: #04070F; stroke-width: 5.2; stroke-linecap: round; }
+    .ff-groove-lip-c { fill: none; stroke: #22D3EE; stroke-width: 1.5; stroke-opacity: 0.72; }
+    .ff-groove-lip-w { fill: none; stroke: #FBBF24; stroke-width: 1.5; stroke-opacity: 0.72; }
+    .ff-trace-c { fill: none; stroke: #00E5FF; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; stroke-opacity: 0.90; }
+    .ff-trace-w { fill: none; stroke: #FBBF24; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; stroke-opacity: 0.90; }
+    .ff-trace-m { fill: none; stroke: #EC4899; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; stroke-opacity: 0.88; }
+    .ff-node-c { fill: #A5F3FC; stroke: #00E5FF; stroke-width: 1.2; }
+    .ff-node-w { fill: #FEF08A; stroke: #FF9500; stroke-width: 1.2; }
+    .ff-f1 { fill: url(#ff-f1-cyan); stroke: #ECFEFF; stroke-width: 1.3; stroke-linejoin: round; filter: url(#ff-glyph-shadow); }
+    .ff-f2 { fill: url(#ff-f2-molten); stroke: #FEF9C3; stroke-width: 1.3; stroke-linejoin: round; filter: url(#ff-glyph-shadow); }
+    .ff-spark-c { fill: #67E8F9; }
+    .ff-spark-w { fill: #FDE047; }
+  </style>
+
+  <!-- Freigestellter Cyber-Amboss-Koerper mit transparentem Fuss-Bogen -->
+  <g clip-path="url(#ff-anvil-clip)">
+    <polygon class="ff-body-l" points="0,45 158,45 108,218 0,218" />
+    <polygon class="ff-body-r" points="158,45 256,45 256,218 108,218" />
+
+    <!-- Konisches linkes Amboss-Horn (obere Eis-Cyan-Facette + untere Stahl-Violett-Facette) -->
+    <path class="ff-horn-b" d="M 12.3 76.3 L 78.2 91.0 L 78.2 132.0 L 12.3 80.0 Z" />
+    <path class="ff-horn-u" d="M 12.3 76.3 L 13.3 74.2 Q 44.8 70.1 78.2 68.6 L 78.2 91.0 Z" />
+    <line x1="13.5" y1="76.5" x2="77.8" y2="90.8" stroke="#E0F2FE" stroke-width="1.6" stroke-opacity="0.82" />
+
+    <!-- Abgesetzter vertikaler Metall-Kragen -->
+    <rect class="ff-collar" x="78.2" y="61.5" width="7.2" height="69.5" />
+    <line x1="80.5" y1="62.5" x2="80.5" y2="130.0" stroke="#67E8F9" stroke-width="1.3" stroke-opacity="0.70" />
+
+    <!-- Leuchtende Leiterbahnen (Circuit-Traces) & Kontaktpunkte -->
+    <polyline class="ff-trace-c" points="104.4,143.4 98.8,162.6 83.5,181.2 83.5,202.2" />
+    <polyline class="ff-trace-c" points="111.6,142.1 106.0,166.4 98.3,184.8 98.3,203.5" />
+    <line class="ff-trace-c" x1="116.7" y1="91.1" x2="93.7" y2="91.1" />
+    <circle class="ff-node-c" cx="83.5" cy="202.2" r="2.3" />
+    <circle class="ff-node-c" cx="98.3" cy="203.5" r="2.3" />
+    <circle class="ff-node-c" cx="93.7" cy="91.1" r="2.2" />
+
+    <polyline class="ff-trace-w" points="195.6,75.8 210.9,66.0 228.4,66.0" />
+    <polyline class="ff-trace-w" points="175.1,108.0 190.0,96.3 202.8,86.0" />
+    <polyline class="ff-trace-m" points="140.3,147.5 155.1,168.4 173.6,188.4 173.6,203.5" />
+    <line class="ff-trace-m" x1="158.2" y1="154.9" x2="188.4" y2="192.5" />
+    <circle class="ff-node-w" cx="228.4" cy="66.0" r="2.3" />
+    <circle class="ff-node-w" cx="202.8" cy="86.0" r="2.3" />
+    <circle class="ff-node-w" cx="173.6" cy="203.5" r="2.3" />
+    <circle class="ff-node-w" cx="188.4" cy="192.5" r="2.2" />
+
+    <!-- Diagonale Schmiede-Teilung ("/") -->
+    <line class="ff-groove-lip-c" x1="154.5" y1="55.5" x2="112.5" y2="195.5" />
+    <line class="ff-groove-lip-w" x1="159.5" y1="55.5" x2="117.5" y2="195.5" />
+    <line class="ff-groove" x1="157.0" y1="55.0" x2="115.0" y2="195.0" />
+
+    <!-- Obere Ambossbahn-Glanzkanten + Gold-Glanzpunkt rechts oben -->
+    <line class="ff-face-cyan" x1="86.5" y1="53.6" x2="154.5" y2="53.6" />
+    <line class="ff-face-gold" x1="159.5" y1="53.6" x2="243.7" y2="53.6" />
+    <ellipse cx="214.5" cy="54.8" rx="13.5" ry="3.8" fill="url(#ff-gold-glint)" />
+
+    <!-- Cyan-Rimlight (Horn-Bauch + linker Fuss) & Neon-Magenta-Rimlight (rechte Ferse + rechter Fuss) -->
+    <path class="ff-rim-cyan" d="M 77.8 126.5 C 57.6 119.8 32.0 93.4 13.3 78.3" />
+    <path class="ff-rim-cyan" d="M 85.0 130.0 Q 93.7 134.1 94.2 148.5 Q 96.3 173.1 69.1 193.5 L 69.1 212.5 L 110.6 212.5" />
+    <path class="ff-rim-magenta" d="M 243.7 52.5 L 238.1 72.7 L 222.2 78.8 Q 187.4 100.4 166.9 143.4 Q 165.4 171.0 202.2 193.5 L 202.2 212.5 L 160.8 212.5" />
+
+    <!-- Eingebettetes FF-Doppel-Monogramm -->
+    <path class="ff-f1" d="M 123.9 68.6 L 149.0 68.6 L 144.6 83.5 L 132.4 83.5 L 127.0 100.9 L 137.0 100.9 L 132.6 115.2 L 122.6 115.2 L 114.4 140.3 L 101.6 142.8 Z" />
+    <path class="ff-f2" d="M 156.7 68.6 L 196.6 68.6 L 192.3 83.5 L 165.6 83.5 L 160.3 100.9 L 176.1 100.9 L 171.8 115.2 L 155.9 115.2 L 146.9 145.4 L 132.9 148.0 Z" />
+  </g>
+
+  <!-- Scharfe Schmiedefunken auf 100 % transparentem Grund -->
+  <polygon class="ff-spark-c" points="37.1,54.8 40.2,57.9 37.1,61.0 34.0,57.9" />
+  <polygon class="ff-spark-c" points="58.4,48.3 60.8,50.7 58.4,53.1 56.0,50.7" />
+  <polygon class="ff-spark-c" points="49.2,130.0 51.8,132.6 49.2,135.2 46.6,132.6" />
+  <polygon class="ff-spark-w" points="232.4,87.9 235.6,91.1 232.4,94.3 229.2,91.1" />
+  <polygon class="ff-spark-w" points="210.4,112.2 212.9,114.7 210.4,117.2 207.9,114.7" />
+  <polygon class="ff-spark-w" points="219.6,169.3 222.4,172.0 219.6,174.7 216.8,172.0" />
+</svg>
