@@ -1,0 +1,404 @@
+name: Build & Release FrameForge v1.0.0 (Windows x64)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-windows:
+    name: Rust MSVC Release, Portable ZIP & WiX v5 MSI (x86_64-pc-windows-msvc)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust Stable Toolchain (MSVC)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable-x86_64-pc-windows-msvc
+          targets: x86_64-pc-windows-msvc
+
+      - name: Configure Rust Dependency & Build Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Fetch Next-Gen Multi-Vendor SDKs (AMD FSR 2.4.0, Intel XeSS 3.0.2, Nvidia Streamline 2.14.16)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          # ---------------------------------------------------------------------------
+          # 1. AMD FidelityFX SDK v2.4.0 (FSR 4.1.2 Upscaler + FSR FG 4.0.0 ML / 3.1.6)
+          # ---------------------------------------------------------------------------
+          if (Test-Path third_party/FidelityFX-SDK) { Remove-Item -Recurse -Force third_party/FidelityFX-SDK }
+          git init third_party/FidelityFX-SDK
+          Push-Location third_party/FidelityFX-SDK
+          git remote add origin https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK.git
+          git config core.sparseCheckout true
+          @(
+            "Kits/FidelityFX/api/include/",
+            "Kits/FidelityFX/framegeneration/include/",
+            "Kits/FidelityFX/upscalers/include/",
+            "Kits/FidelityFX/signedbin/",
+            "docs/license.md",
+            "LICENSE.txt"
+          ) | Set-Content -Encoding ascii .git/info/sparse-checkout
+          git fetch --depth 1 origin refs/tags/v2.4.0
+          git checkout FETCH_HEAD
+          Pop-Location
+
+          $ffxSignedBin = "third_party/FidelityFX-SDK/Kits/FidelityFX/signedbin"
+          New-Item -ItemType Directory -Force -Path $ffxSignedBin | Out-Null
+
+          $ffxRequiredDlls = @(
+            "amd_fidelityfx_loader_dx12.dll",
+            "amd_fidelityfx_framegeneration_dx12.dll",
+            "amd_fidelityfx_upscaler_dx12.dll"
+          )
+          $missingFfxDll = $false
+          foreach ($dllName in $ffxRequiredDlls) {
+            if (-not (Test-Path (Join-Path $ffxSignedBin $dllName))) {
+              $missingFfxDll = $true
+            }
+          }
+
+          if ($missingFfxDll) {
+            if (Test-Path _dl_ffx) { Remove-Item -Recurse -Force _dl_ffx }
+            New-Item -ItemType Directory -Force -Path _dl_ffx | Out-Null
+            gh release download v2.4.0 --repo GPUOpen-LibrariesAndSDKs/FidelityFX-SDK -p "*Minimal*.zip" -D _dl_ffx
+            $ffxZips = @(Get-ChildItem -Path _dl_ffx -Filter "*.zip")
+            if ($ffxZips.Count -eq 0) {
+              gh release download v2.4.0 --repo GPUOpen-LibrariesAndSDKs/FidelityFX-SDK -p "*.zip" -D _dl_ffx
+              $ffxZips = @(Get-ChildItem -Path _dl_ffx -Filter "*.zip")
+            }
+            New-Item -ItemType Directory -Force -Path _dl_ffx/extracted | Out-Null
+            foreach ($zip in $ffxZips) {
+              Expand-Archive -LiteralPath $zip.FullName -DestinationPath _dl_ffx/extracted -Force
+            }
+            foreach ($dllName in $ffxRequiredDlls) {
+              $foundDll = Get-ChildItem -Path _dl_ffx/extracted -Recurse -File -Filter $dllName | Select-Object -First 1
+              if ($null -ne $foundDll) {
+                Copy-Item -Force $foundDll.FullName (Join-Path $ffxSignedBin $dllName)
+              }
+            }
+            if (-not (Test-Path "third_party/FidelityFX-SDK/Kits/FidelityFX/api/include/ffx_api.h")) {
+              $foundFfxApi = Get-ChildItem -Path _dl_ffx/extracted -Recurse -File -Filter "ffx_api.h" | Select-Object -First 1
+              if ($null -ne $foundFfxApi) {
+                $kitsFfxRoot = $foundFfxApi.Directory.Parent.Parent.FullName
+                Copy-Item -Recurse -Force (Join-Path $kitsFfxRoot "*") "third_party/FidelityFX-SDK/Kits/FidelityFX/"
+              }
+            }
+            if (-not (Test-Path "third_party/FidelityFX-SDK/docs/license.md")) {
+              $foundFfxLic = Get-ChildItem -Path _dl_ffx/extracted -Recurse -File |
+                Where-Object { $_.Name -match "(?i)license" } |
+                Select-Object -First 1
+              if ($null -ne $foundFfxLic) {
+                New-Item -ItemType Directory -Force -Path "third_party/FidelityFX-SDK/docs" | Out-Null
+                Copy-Item -Force $foundFfxLic.FullName "third_party/FidelityFX-SDK/docs/license.md"
+              }
+            }
+            Remove-Item -Recurse -Force _dl_ffx
+          }
+
+          # ---------------------------------------------------------------------------
+          # 2. Intel XeSS SDK v3.0.2 (XeSS 3 SR + XeLL + XeFG Multi-Frame-Gen)
+          # ---------------------------------------------------------------------------
+          if (Test-Path third_party/xess) { Remove-Item -Recurse -Force third_party/xess }
+          if (Test-Path _dl_xess) { Remove-Item -Recurse -Force _dl_xess }
+          New-Item -ItemType Directory -Force -Path third_party/xess/inc | Out-Null
+          New-Item -ItemType Directory -Force -Path third_party/xess/bin | Out-Null
+          New-Item -ItemType Directory -Force -Path third_party/xess/licenses | Out-Null
+          New-Item -ItemType Directory -Force -Path _dl_xess/extracted | Out-Null
+
+          gh release download v3.0.2 --repo intel/xess -p "*.zip" -D _dl_xess
+          $xessZips = @(Get-ChildItem -Path _dl_xess -Filter "*.zip" | Where-Object { $_.Name -notlike "*Inspector*" })
+          foreach ($zip in $xessZips) {
+            Expand-Archive -LiteralPath $zip.FullName -DestinationPath _dl_xess/extracted -Force
+          }
+
+          $xessHeader = Get-ChildItem -Path _dl_xess/extracted -Recurse -File -Filter "xess_d3d12.h" | Select-Object -First 1
+          if ($null -eq $xessHeader) {
+            throw "Intel XeSS v3.0.2 Header xess_d3d12.h not found in release archive!"
+          }
+          Copy-Item -Recurse -Force (Join-Path $xessHeader.Directory.FullName "*") third_party/xess/inc/
+
+          foreach ($dllName in @("libxess.dll", "libxell.dll", "libxess_fg.dll")) {
+            $foundDll = Get-ChildItem -Path _dl_xess/extracted -Recurse -File -Filter $dllName |
+              Where-Object { $_.FullName -notmatch "(?i)\\debug\\" } |
+              Select-Object -First 1
+            if ($null -eq $foundDll) {
+              $foundDll = Get-ChildItem -Path _dl_xess/extracted -Recurse -File -Filter $dllName | Select-Object -First 1
+            }
+            if ($null -ne $foundDll) {
+              Copy-Item -Force $foundDll.FullName (Join-Path "third_party/xess/bin" $dllName)
+            }
+          }
+
+          $xessIdx = 0
+          Get-ChildItem -Path _dl_xess/extracted -Recurse -File |
+            Where-Object { $_.Name -match "(?i)(license|third[-_ ]?party)" } |
+            ForEach-Object {
+              $destName = $_.Name
+              if (Test-Path (Join-Path "third_party/xess/licenses" $destName)) {
+                $xessIdx++
+                $destName = "{0}_{1}{2}" -f [System.IO.Path]::GetFileNameWithoutExtension($_.Name), $xessIdx, $_.Extension
+              }
+              Copy-Item -Force $_.FullName (Join-Path "third_party/xess/licenses" $destName)
+            }
+          Remove-Item -Recurse -Force _dl_xess
+
+          # ---------------------------------------------------------------------------
+          # 3. Nvidia Streamline SDK v2.14.16 (DLSS 4.5 Transformer & Multi-Frame-Gen)
+          # ---------------------------------------------------------------------------
+          if (Test-Path third_party/streamline) { Remove-Item -Recurse -Force third_party/streamline }
+          if (Test-Path _dl_sl) { Remove-Item -Recurse -Force _dl_sl }
+          New-Item -ItemType Directory -Force -Path third_party/streamline/include | Out-Null
+          New-Item -ItemType Directory -Force -Path third_party/streamline/bin | Out-Null
+          New-Item -ItemType Directory -Force -Path third_party/streamline/licenses | Out-Null
+          New-Item -ItemType Directory -Force -Path _dl_sl/extracted | Out-Null
+
+          gh release download v2.14.16 --repo NVIDIA-RTX/Streamline -p "*streamline-sdk*.zip" -D _dl_sl
+          $slZips = @(Get-ChildItem -Path _dl_sl -Filter "*.zip" | Where-Object { $_.Name -notmatch "(?i)aarch64|arm64" })
+          if ($slZips.Count -eq 0) {
+            gh release download v2.14.16 --repo NVIDIA-RTX/Streamline -p "*.zip" -D _dl_sl
+            $slZips = @(Get-ChildItem -Path _dl_sl -Filter "*.zip" | Where-Object { $_.Name -notmatch "(?i)aarch64|arm64" })
+          }
+          foreach ($zip in $slZips) {
+            Expand-Archive -LiteralPath $zip.FullName -DestinationPath _dl_sl/extracted -Force
+          }
+
+          $slHeader = Get-ChildItem -Path _dl_sl/extracted -Recurse -File -Filter "sl.h" | Select-Object -First 1
+          if ($null -eq $slHeader) {
+            throw "Nvidia Streamline v2.14.16 Header sl.h not found in release archive!"
+          }
+          Copy-Item -Recurse -Force (Join-Path $slHeader.Directory.FullName "*") third_party/streamline/include/
+
+          $slTargetDlls = @(
+            "sl.interposer.dll",
+            "sl.common.dll",
+            "sl.dlss_g.dll",
+            "sl.dlss.dll",
+            "sl.reflex.dll",
+            "sl.pcl.dll",
+            "nvngx_dlss.dll",
+            "nvngx_dlssg.dll"
+          )
+          foreach ($dllName in $slTargetDlls) {
+            $foundDll = Get-ChildItem -Path _dl_sl/extracted -Recurse -File -Filter $dllName |
+              Where-Object {
+                $_.FullName -match "(?i)[\\/]bin[\\/]x64[\\/]" -and
+                $_.FullName -notmatch "(?i)[\\/](development|debug|aarch64|arm64)[\\/]"
+              } |
+              Select-Object -First 1
+            if ($null -eq $foundDll) {
+              $foundDll = Get-ChildItem -Path _dl_sl/extracted -Recurse -File -Filter $dllName |
+                Where-Object { $_.FullName -notmatch "(?i)[\\/](development|debug|aarch64|arm64)[\\/]" } |
+                Select-Object -First 1
+            }
+            if ($null -ne $foundDll) {
+              Copy-Item -Force $foundDll.FullName (Join-Path "third_party/streamline/bin" $dllName)
+            }
+          }
+
+          $slIdx = 0
+          Get-ChildItem -Path _dl_sl/extracted -Recurse -File |
+            Where-Object { $_.Name -match "(?i)license" } |
+            ForEach-Object {
+              $parentTag = $_.Directory.Name -replace "[^A-Za-z0-9._-]", "_"
+              $destName = if ($parentTag -and ($parentTag -notmatch "^(?i)extracted$")) {
+                "${parentTag}_$($_.Name)"
+              } else {
+                $_.Name
+              }
+              if (Test-Path (Join-Path "third_party/streamline/licenses" $destName)) {
+                $slIdx++
+                $destName = "{0}_{1}{2}" -f [System.IO.Path]::GetFileNameWithoutExtension($destName), $slIdx, $_.Extension
+              }
+              Copy-Item -Force $_.FullName (Join-Path "third_party/streamline/licenses" $destName)
+            }
+          Remove-Item -Recurse -Force _dl_sl
+
+      - name: Build Release Executable
+        run: cargo build --release
+
+      - name: Stage Bundles, Build Portable ZIP, Build WiX v5 MSI & Generate SHA256SUMS
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          foreach ($dir in @("dist_msi", "dist_portable", "release_out")) {
+            if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+          }
+          New-Item -ItemType Directory -Force -Path "dist_msi/licenses" | Out-Null
+          New-Item -ItemType Directory -Force -Path "dist_portable" | Out-Null
+          New-Item -ItemType Directory -Force -Path "release_out" | Out-Null
+
+          # ---------------------------------------------------------------------------
+          # 1. Gemeinsames Basis-Staging in dist_msi/ (inkl. aller Pflicht-Lizenzen)
+          # ---------------------------------------------------------------------------
+          Copy-Item -Force "target/release/frameforge.exe" "dist_msi/frameforge.exe"
+          Copy-Item -Force "LICENSE" "dist_msi/LICENSE.txt"
+          Copy-Item -Force "THIRD_PARTY_NOTICES.md" "dist_msi/THIRD_PARTY_NOTICES.md"
+          Copy-Item -Force "README.md" "dist_msi/README.md"
+
+          foreach ($sdkBinDir in @(
+            "third_party/FidelityFX-SDK/Kits/FidelityFX/signedbin",
+            "third_party/xess/bin",
+            "third_party/streamline/bin"
+          )) {
+            if (Test-Path $sdkBinDir) {
+              Get-ChildItem -Path $sdkBinDir -File -Filter "*.dll" | ForEach-Object {
+                Copy-Item -Force $_.FullName (Join-Path "dist_msi" $_.Name)
+              }
+            }
+          }
+
+          # AMD FidelityFX Original-Lizenz
+          if (Test-Path "third_party/FidelityFX-SDK/docs/license.md") {
+            Copy-Item -Force "third_party/FidelityFX-SDK/docs/license.md" "dist_msi/licenses/AMD_FidelityFX_LICENSE.md"
+          } elseif (Test-Path "third_party/FidelityFX-SDK/LICENSE.txt") {
+            Copy-Item -Force "third_party/FidelityFX-SDK/LICENSE.txt" "dist_msi/licenses/AMD_FidelityFX_LICENSE.md"
+          }
+
+          # Intel XeSS Original-Lizenzen & Third-Party-Hinweise
+          Get-ChildItem -Path "third_party" -Directory -Filter "xess*" | ForEach-Object {
+            Get-ChildItem -Path $_.FullName -Recurse -File |
+              Where-Object { $_.Name -match "(?i)(license|third[-_ ]?party)" } |
+              ForEach-Object {
+                $cleanName = $_.Name -replace "^(?i)Intel_", ""
+                Copy-Item -Force $_.FullName (Join-Path "dist_msi/licenses" "Intel_$cleanName")
+              }
+          }
+
+          # NVIDIA Streamline & RTX/DLSS Original-Lizenzen
+          Get-ChildItem -Path "third_party" -Directory |
+            Where-Object { $_.Name -match "^(?i)(sl|streamline)" } |
+            ForEach-Object {
+              Get-ChildItem -Path $_.FullName -Recurse -File |
+                Where-Object { $_.Name -match "(?i)license" } |
+                ForEach-Object {
+                  $cleanName = $_.Name -replace "^(?i)NVIDIA_", ""
+                  Copy-Item -Force $_.FullName (Join-Path "dist_msi/licenses" "NVIDIA_$cleanName")
+                }
+            }
+
+          # Sicherstellen, dass im MSI-Staging niemals portable.mode liegt (%APPDATA%-Modus)
+          if (Test-Path "dist_msi/portable.mode") {
+            Remove-Item -Force "dist_msi/portable.mode"
+          }
+
+          # ---------------------------------------------------------------------------
+          # 2. Portable-Paket bauen (FrameForge-v1.0.0-Portable-win64.zip)
+          # ---------------------------------------------------------------------------
+          Copy-Item -Recurse -Force "dist_msi/*" "dist_portable/"
+          "FrameForge Portable Mode Marker - settings are stored in frameforge_settings.json next to frameforge.exe." |
+            Set-Content -Encoding utf8 "dist_portable/portable.mode"
+
+          $zipOut = "release_out/FrameForge-v1.0.0-Portable-win64.zip"
+          Compress-Archive -Path "dist_portable/*" -DestinationPath $zipOut -CompressionLevel Optimal -Force
+
+          # ---------------------------------------------------------------------------
+          # 3. Windows .msi-Installer bauen (Open-Source WiX Toolset v5.0.2 gepinnt)
+          # ---------------------------------------------------------------------------
+          if (-not (Test-Path "target/frameforge.ico")) {
+            throw "Expected icon target/frameforge.ico was not generated by build.rs!"
+          }
+
+          $dotnetTools = Join-Path $HOME ".dotnet\tools"
+          if (-not ($env:PATH -split ";" | Where-Object { $_ -eq $dotnetTools })) {
+            $env:PATH = "$dotnetTools;$env:PATH"
+          }
+          dotnet tool install --global wix --version 5.0.2
+
+          $msiOut = "release_out/FrameForge-v1.0.0-Setup-x64.msi"
+          wix build installer/FrameForge.wxs -arch x64 -b . -o $msiOut
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path $msiOut)) {
+            throw "WiX v5.0.2 MSI build failed!"
+          }
+
+          # ---------------------------------------------------------------------------
+          # 4. SHA-256 Pruefsummen erzeugen (release_out/SHA256SUMS.txt)
+          # ---------------------------------------------------------------------------
+          $hashLines = foreach ($artifact in @(
+            "FrameForge-v1.0.0-Setup-x64.msi",
+            "FrameForge-v1.0.0-Portable-win64.zip"
+          )) {
+            $fullPath = Join-Path "release_out" $artifact
+            $hash = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $artifact"
+          }
+          $hashLines | Set-Content -Encoding ascii "release_out/SHA256SUMS.txt"
+
+          Get-ChildItem -Path "release_out" | Format-Table Name, Length -AutoSize
+
+      - name: Upload FrameForge v1.0.0 Release Artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: FrameForge-v1.0.0-Windows-x64
+          path: release_out/
+          if-no-files-found: error
+
+      - name: Publish GitHub Release v1.0.0
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $notes = @(
+            '# FrameForge v1.0.0 â€” Created by SprtnDio',
+            '',
+            '## Downloads (Windows 10/11 x64)',
+            '- **`FrameForge-v1.0.0-Setup-x64.msi` (Windows Installer):** Installs to `Program Files\FrameForge` with Start Menu & Desktop shortcuts and stores user settings in `%APPDATA%\FrameForge\settings.json`.',
+            '- **`FrameForge-v1.0.0-Portable-win64.zip` (Portable Edition):** Extract anywhere and run `frameforge.exe` â€” no installation required; stores settings directly next to the executable in `frameforge_settings.json`.',
+            '- **`SHA256SUMS.txt`:** SHA-256 checksums for both packages.',
+            '',
+            '### Highlights (EN)',
+            '- Low-latency DirectX 12 HDMI video capture (`NV12`/`YUY2`, Limited-RGB expansion, `60->30` duplicate filter) + WASAPI stereo audio passthrough.',
+            '- Synthetic 3D G-Buffer (`R16G16_FLOAT` Motion Vectors & Edge-Aegis `R32_FLOAT` Pseudo-Depth).',
+            '- Multi-Vendor Frame Generation (`2x / 3x / 4x` Multi-FG): **AMD FSR 4.1 (SDK 2.4.0)**, **Intel XeSS 3 (SDK 3.0.2)**, and **NVIDIA DLSS 4.5 (Streamline 2.14.16)**.',
+            '- Individually selectable iGPU Performance Turbos, non-blocking D3D12 FPS Limiter, live `DE | EN` language switching, draggable telemetry OSD, and automatic JSON settings persistence.',
+            '',
+            '---',
+            '',
+            '## Downloads & Ãœbersicht (Deutsch)',
+            '- **`FrameForge-v1.0.0-Setup-x64.msi` (Windows-Installer):** Installiert nach `Program Files\FrameForge` inkl. StartmenÃ¼- & Desktop-VerknÃ¼pfung und speichert Einstellungen unter `%APPDATA%\FrameForge\settings.json`.',
+            '- **`FrameForge-v1.0.0-Portable-win64.zip` (Portable Edition):** Einfach entpacken & `frameforge.exe` starten â€” speichert alle Einstellungen direkt daneben in `frameforge_settings.json`.',
+            '',
+            '### Highlights (DE)',
+            '- Extrem latenzarmes DirectX-12 HDMI-Capture + WASAPI-Stereo-Audio-Passthrough.',
+            '- Eigener Synthetic 3D-G-Buffer (Motion Vectors + Edge-Aegis Pseudo-Depth) & `2x / 3x / 4x` Multi-Frame Generation (**AMD FSR 4.1**, **Intel XeSS 3**, **NVIDIA DLSS 4.5**).',
+            '- Einzeln schaltbare iGPU-Performance-Turbos, Anti-Flacker-FPS-Limiter, Live-Sprachumschaltung (`DE | EN`), frei verschiebbares Performance-OSD und automatische Einstellungs-Speicherung.',
+            '',
+            '*Independent open-source project by **SprtnDio**. Not affiliated with AMD, Intel, NVIDIA, or Microsoft.*'
+          )
+          $notes -join "`n" | Set-Content -Encoding utf8 "release_notes.md"
+
+          $prevEap = $ErrorActionPreference
+          $ErrorActionPreference = "Continue"
+          gh release view v1.0.0 *> $null
+          $releaseExists = ($LASTEXITCODE -eq 0)
+          $ErrorActionPreference = $prevEap
+
+          $releaseAssets = @(Get-ChildItem -Path "release_out/*" -File | ForEach-Object { $_.FullName })
+          if (-not $releaseExists) {
+            gh release create v1.0.0 @releaseAssets --title "FrameForge v1.0.0" --notes-file release_notes.md --target "${{ github.sha }}"
+          } else {
+            gh release upload v1.0.0 @releaseAssets --clobber
+            gh release edit v1.0.0 --title "FrameForge v1.0.0" --notes-file release_notes.md
+          }
